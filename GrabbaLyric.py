@@ -16,27 +16,34 @@ def is_arguments(args):
         return False
 
 def split_options(args):
-    options = {"verbose":False}
+    options = {"verbose":False,"verboser":False}
     if args[1].startswith("-"):
         if 'v' in args[1]:
             options["verbose"] = True
+        if 'vv' in args[1]:
+            options["verboser"] = True
         return args[2:], options
     else:
         return args[1:], options
 
-def retrieve_data(search,opts):
+def get_first_result_url(search,opts):
     surl = "http://search.azlyrics.com/search.php?q=" +\
             '+'.join(search)
     if opts["verbose"]:
-        print(surl)
+        print("Search URL: " + surl)
     res = requests.get(surl)
     res.raise_for_status()
-    if opts["verbose"]:
+    if opts["verboser"]:
         print(res.text)
-    return res
+    soup = bs4.BeautifulSoup(res.text, "html.parser")
+    lyrics_elem = soup.select('td.text-left a')
+    first_result = lyrics_elem[0].get('href')
+    if opts["verbose"]:
+        print("First Search Result: " + first_result)
+    return first_result
 
-def parse_data(html,opts):
-    #TODO use bs4 to return lyrics
+def get_lyrics_from_search(html,opts):
+    #TODO
     pass
 
 def save_to_cache_file(text,srch,opts):
@@ -52,8 +59,8 @@ def main(args):
         sys.exit()
     search,options = split_options(args)
     check_for_cached_lyrics(search,options)
-    data = retrieve_data(search,options)
-    text = parse_data(data,options)
+    lyric_url = get_first_result_url(search,options)
+    text = get_lyrics_from_search(lyric_url,options)
     save_to_cache_file(text,search,options)
     print(text)
 
