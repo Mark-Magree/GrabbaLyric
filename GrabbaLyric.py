@@ -2,15 +2,16 @@
 #GrabbaLyric.py - download lyrics for given song
 #Usage: GrabbaLyric.py [-vv] query search terms
 #Options:
+#   -l  List Keys: list cache file keys
 #   -v  Verbose: print diagnostic text
 #   -vv Verboser: print entire page ment to be scraped plus verbose
 #Output: Text, several lines
 
-import requests, os, sys, shelve
+import requests, sys, shelve
+from os.path import expanduser
 import bs4
 
-home = os.path.expanduser('~')
-CACHE_FILE = home + "/.cache/GrabbaLyric.cache"
+CACHE_FILE = expanduser('~') + "/.cache/GrabbaLyric.cache"
 
 def is_arguments(args):
     #TODO list comprehension to shorten?
@@ -82,7 +83,7 @@ def save_to_cache_file(text,srch,opts):
 
 def list_cached_keys():
     with shelve.open(CACHE_FILE) as shelf:
-        for key in shelf.keys:
+        for key in shelf.keys():
             print(key)
 
 def check_for_cached_lyrics(search,opts):
