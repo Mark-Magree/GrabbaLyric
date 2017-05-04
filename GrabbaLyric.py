@@ -75,7 +75,6 @@ def sanatize_cache_key(word_list):
 
 def save_to_cache_file(text,srch,opts):
     key = sanatize_cache_key(srch)
-    
     with shelve.open(CACHE_FILE) as shelf:
         shelf[key] = text
     if opts['verbose']:
@@ -87,8 +86,12 @@ def list_cached_keys():
             print(key)
 
 def check_for_cached_lyrics(search,opts):
-    #TODO check cache file for lyrics before downlodaing
-    pass
+    key = sanatize_cache_key(search)
+    with shelve.open(CACHE_FILE) as shelf:
+        if key in shelf.keys():
+            print("Found in cache")
+            print(shelf[key])
+            sys.exit()
 
 def main(args):
     if not is_arguments(args):
