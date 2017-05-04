@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-#GrabbaLyric.py - download lyrics from azlyrics.com
-#Usage: GrabbaLyric.py [-v] query search terms
-#Output: Text 
+#GrabbaLyric.py - download lyrics for given song
+#Usage: GrabbaLyric.py [-vv] query search terms
+#Options:
+#   -v  Verbose: print diagnostic text
+#   -vv Verboser: print entire page ment to be scraped plus verbose
+#Output: Text, several lines
 
 import requests, sys
 import bs4
@@ -27,24 +30,40 @@ def split_options(args):
         return args[1:], options
 
 def get_first_result_url(search,opts):
-    surl = "http://search.azlyrics.com/search.php?q=" +\
-            '+'.join(search)
+    base = "https://search.letssingit.com"
+    strm1 = '+'.join(search) 
+    surl = base + "/?a=search&artist_id=&l=archive&s=" + strm1
     if opts["verbose"]:
-        print("Search URL: " + surl)
-    res = requests.get(surl)
+        print("Search URL: ")
+        print(surl)
+    headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.0; WOW64;\
+            rv:24.0) Gecko/20100102 Firefox/34.0' }
+    res = requests.get(surl, headers=headers)
     res.raise_for_status()
     if opts["verboser"]:
         print(res.text)
     soup = bs4.BeautifulSoup(res.text, "html.parser")
-    lyrics_elem = soup.select('td.text-left a')
-    first_result = lyrics_elem[0].get('href')
+    song_link = soup.select('td a.high_profile')
+    first_result = song_link[0].get('href')
     if opts["verbose"]:
-        print("First Search Result: " + first_result)
+        print("First Result:")
+        print(first_result)
     return first_result
 
-def get_lyrics_from_search(html,opts):
-    #TODO
-    pass
+def get_lyrics_from_search(url,opts):
+    headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.0; WOW64;\
+            rv:24.0) Gecko/20100103 Firefox/44.0' }
+    res = requests.get(url, headers=headers)
+    res.raise_for_status()
+    if opts["verboser"]:
+        print(res.text)
+    soup = bs4.BeautifulSoup(res.text, "html.parser")
+    lyrics_text = soup.select('div#lyrics')
+    if opts["verbose"]:
+        print("Lyrics Page Result: ")
+        print(lyrics_text[0])
+    return lyrics_text[0].text
+
 
 def save_to_cache_file(text,srch,opts):
     #TODO save lyrics to a file somewhere 
