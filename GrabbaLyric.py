@@ -83,4 +83,5 @@ def main(args):
     save_to_cache_file(text,search,options)
     print(text)
 
-main(sys.argv)
+if __name__ == "__main__":
+    main(sys.argv)
