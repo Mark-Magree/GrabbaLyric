@@ -6,8 +6,11 @@
 #   -vv Verboser: print entire page ment to be scraped plus verbose
 #Output: Text, several lines
 
-import requests, sys
+import requests, os, sys, shelve
 import bs4
+
+home = os.path.expanduser('~')
+CACHE_FILE = home + "/.cache/GrabbaLyric.cache"
 
 def is_arguments(args):
     #TODO list comprehension to shorten?
@@ -19,8 +22,10 @@ def is_arguments(args):
         return False
 
 def split_options(args):
-    options = {"verbose":False,"verboser":False}
+    options = {"verbose":False,"verboser":False,"list_only":False}
     if args[1].startswith("-"):
+        if 'l' in args[1]:
+            options["list_only"] = True
         if 'v' in args[1]:
             options["verbose"] = True
         if 'vv' in args[1]:
@@ -59,15 +64,26 @@ def get_lyrics_from_search(url,opts):
         print(res.text)
     soup = bs4.BeautifulSoup(res.text, "html.parser")
     lyrics_text = soup.select('div#lyrics')
-    if opts["verbose"]:
-        print("Lyrics Page Result: ")
-        print(lyrics_text[0])
     return lyrics_text[0].text
 
+def sanatize_cache_key(word_list):
+    for i in range(len(word_list)):
+        word_list[i] = word_list[i].title()
+    word_list.sort()
+    return ''.join(word_list)
 
 def save_to_cache_file(text,srch,opts):
-    #TODO save lyrics to a file somewhere 
-    pass
+    key = sanatize_cache_key(srch)
+    
+    with shelve.open(CACHE_FILE) as shelf:
+        shelf[key] = text
+    if opts['verbose']:
+        print("%s written to cache" % (key))
+
+def list_cached_keys():
+    with shelve.open(CACHE_FILE) as shelf:
+        for key in shelf.keys:
+            print(key)
 
 def check_for_cached_lyrics(search,opts):
     #TODO check cache file for lyrics before downlodaing
@@ -76,7 +92,10 @@ def check_for_cached_lyrics(search,opts):
 def main(args):
     if not is_arguments(args):
         sys.exit()
-    search,options = split_options(args)
+    search,options = split_options(args) #search,options = list,dict
+    if options['list_only']:
+        list_cached_keys()
+        sys.exit()
     check_for_cached_lyrics(search,options)
     lyric_url = get_first_result_url(search,options)
     text = get_lyrics_from_search(lyric_url,options)
